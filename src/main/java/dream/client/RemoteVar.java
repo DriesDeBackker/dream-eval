@@ -85,9 +85,10 @@ public class RemoteVar<T extends Serializable> implements Subscriber, UpdateProd
 	private final void sendEventPacketToListeners(EventPacket evPkt) {
 		if (!consumers.isEmpty()) {
 			final Set<UpdateConsumer> satConsumers = //
-			consumers.entrySet().stream().filter(e -> e.getValue().stream().allMatch(constr -> constr.test(val)))//
-					.map(e -> e.getKey())//
-					.collect(Collectors.toSet());
+					consumers.entrySet().stream()
+							.filter(e -> e.getValue().stream().allMatch(constr -> constr.test(val)))//
+							.map(e -> e.getKey())//
+							.collect(Collectors.toSet());
 
 			pendingAcks = satConsumers.size();
 			satConsumers.forEach(c -> c.updateFromProducer(evPkt, this));

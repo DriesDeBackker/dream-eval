@@ -64,4 +64,6 @@ public interface UpdateProducer<T> {
 	 */
 	List<SerializablePredicate<T>> getConstraints();
 
+	public T get();
+
 }

@@ -51,4 +51,10 @@ class FilteredUpdateProducer<T> implements UpdateProducer<T> {
 		return constraints;
 	}
 
+	@Override
+	public T get() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
