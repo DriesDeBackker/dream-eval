@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
@@ -17,9 +18,11 @@ import dream.client.UpdateProducer;
 import dream.client.Var;
 import dream.common.Consts;
 import evalapp.commands.Command;
+import evalapp.commands.IterationSpecifics;
 import evalapp.commands.RemoteVarCommand;
 import evalapp.commands.SignalCommand;
 import evalapp.commands.VarCommand;
+import evalapp.generator.Generator;
 
 public class Deployer {
 	private String hostname;
@@ -76,10 +79,10 @@ public class Deployer {
 		if (command == null || !command.getTarget().equals(this.hostname)) {
 			return false;
 		}
-		if (command instanceof VarCommand) {
+		if (command instanceof VarCommand<?>) {
 			System.out.println("Deploying a new Var.");
 			logger.fine("Deploying a new Var.");
-			this.processVarCommand((VarCommand) command);
+			this.processVarCommand((VarCommand<?>) command);
 		} else if (command instanceof RemoteVarCommand) {
 			System.out.println("Deploying a new RemoteVar.");
 			logger.fine("Deploying a new RemoteVar.");
@@ -92,11 +95,31 @@ public class Deployer {
 		return true;
 	}
 
-	private void processVarCommand(VarCommand command) {
+	private void processVarCommand(VarCommand<?> command) {
 		// TODO add a thread that executes a modifying function enclosed in the
 		// command!!!
-		Var<? extends Serializable> newVar = new Var<>(command.getName(), command.getInitialValue());
+		Var<?> newVar = new Var<>(command.getName(), command.getInitialValue());
 		this.addReactiveVar(command.getName(), newVar);
+
+		Thread t1 = new Thread(new Runnable() {
+			public void run() {
+				IterationSpecifics is = command.getIs();
+				long mean = is.getMean();
+				long sd = is.getSd();
+				Generator<?> g = command.getGenerator();
+				Random r = new Random();
+				while (true) {
+					newVar.setUnsafe(g.next());
+					double next = r.nextGaussian() * sd + mean;
+					try {
+						Thread.sleep((long) next);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		});
+		t1.start();
 	}
 
 	private void processRemoteVarCommand(RemoteVarCommand command) {

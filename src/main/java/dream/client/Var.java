@@ -50,6 +50,12 @@ public class Var<T extends Serializable> implements UpdateProducer<T>, LockAppli
 		}
 	}
 
+	@SuppressWarnings("unchecked")
+	// For evaluation purposes only.
+	public final synchronized void setUnsafe(Object val) {
+		this.set((T) val);
+	}
+
 	public final synchronized void modify(Consumer<T> modification) {
 		waitingModifications.add(modification);
 		if (waitingModifications.size() == 1) {
@@ -100,9 +106,9 @@ public class Var<T extends Serializable> implements UpdateProducer<T>, LockAppli
 		packet.setLockReleaseNodes(forwarder.getLockReleaseNodesFor(source));
 
 		final Set<UpdateConsumer> satConsumers = //
-		consumers.entrySet().stream().filter(e -> e.getValue().stream().allMatch(constr -> constr.test(val)))//
-				.map(e -> e.getKey())//
-				.collect(Collectors.toSet());
+				consumers.entrySet().stream().filter(e -> e.getValue().stream().allMatch(constr -> constr.test(val)))//
+						.map(e -> e.getKey())//
+						.collect(Collectors.toSet());
 
 		pendingAcks = satConsumers.size();
 		satConsumers.forEach(c -> c.updateFromProducer(packet, this));
