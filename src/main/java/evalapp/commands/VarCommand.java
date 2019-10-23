@@ -2,17 +2,17 @@ package evalapp.commands;
 
 import java.io.Serializable;
 
-import evalapp.generator.Generator;
+import evalapp.valgenerator.ValueGenerator;
 
 public class VarCommand<T extends Serializable> extends Command implements Serializable {
 
 	private static final long serialVersionUID = 8886245125293165876L;
 	private String name;
 	private T initialValue;
-	private Generator<T> generator;
+	private ValueGenerator<T> generator;
 	private IterationSpecifics is;
 
-	public VarCommand(String target, String name, T initialValue, Generator<T> generator, IterationSpecifics is) {
+	public VarCommand(String target, String name, T initialValue, ValueGenerator<T> generator, IterationSpecifics is) {
 		super(target);
 		this.setName(name);
 		this.setInitialValue(initialValue);
@@ -36,11 +36,11 @@ public class VarCommand<T extends Serializable> extends Command implements Seria
 		this.initialValue = initialValue;
 	}
 
-	public Generator<T> getGenerator() {
+	public ValueGenerator<T> getGenerator() {
 		return this.generator;
 	}
 
-	private void setGenerator(Generator<T> generator) {
+	private void setGenerator(ValueGenerator<T> generator) {
 		this.generator = generator;
 	}
 

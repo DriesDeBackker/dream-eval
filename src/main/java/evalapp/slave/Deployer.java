@@ -22,7 +22,7 @@ import evalapp.commands.IterationSpecifics;
 import evalapp.commands.RemoteVarCommand;
 import evalapp.commands.SignalCommand;
 import evalapp.commands.VarCommand;
-import evalapp.generator.Generator;
+import evalapp.valgenerator.ValueGenerator;
 
 public class Deployer {
 	private String hostname;
@@ -106,7 +106,7 @@ public class Deployer {
 				IterationSpecifics is = command.getIs();
 				long mean = is.getMean();
 				long sd = is.getSd();
-				Generator<?> g = command.getGenerator();
+				ValueGenerator<?> g = command.getGenerator();
 				Random r = new Random();
 				while (true) {
 					newVar.setUnsafe(g.next());

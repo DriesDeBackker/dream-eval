@@ -11,8 +11,8 @@ import evalapp.commands.IterationSpecifics;
 import evalapp.commands.RemoteVarCommand;
 import evalapp.commands.SignalCommand;
 import evalapp.commands.VarCommand;
-import evalapp.generator.Generator;
-import evalapp.generator.RandomNormalInteger;
+import evalapp.valgenerator.RandomNormalInteger;
+import evalapp.valgenerator.ValueGenerator;
 
 public class ReactiveProgram extends Client {
 	private static final String HOSTNAME = "master";
@@ -41,7 +41,7 @@ public class ReactiveProgram extends Client {
 		Command c1 = new RemoteVarCommand("slave1", "master", "counter");
 		cmds.set(c1);
 
-		Generator<Integer> g = new RandomNormalInteger(1, 100);
+		ValueGenerator<Integer> g = new RandomNormalInteger(1, 100);
 		IterationSpecifics is = new IterationSpecifics(3000, 100);
 		Command c2 = new VarCommand<Integer>("slave1", "randint", 10, g, is);
 		cmds.set(c2);

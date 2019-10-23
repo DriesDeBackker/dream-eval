@@ -1,8 +1,10 @@
-package evalapp.generator;
+package evalapp.valgenerator;
 
 import java.io.Serializable;
 
-public class Counter implements Generator<Integer>, Serializable {
+import evalapp.valgenerator.ValueGenerator;
+
+public class Counter implements ValueGenerator<Integer>, Serializable {
 
 	private static final long serialVersionUID = -2596743613103381156L;
 	Integer current;

@@ -1,9 +1,11 @@
-package evalapp.generator;
+package evalapp.valgenerator;
 
 import java.io.Serializable;
 import java.util.Random;
 
-public class RandomNormalInteger implements Generator<Integer>, Serializable {
+import evalapp.valgenerator.ValueGenerator;
+
+public class RandomNormalInteger implements ValueGenerator<Integer>, Serializable {
 
 	private static final long serialVersionUID = -9056726378165269760L;
 	private final long mean;
