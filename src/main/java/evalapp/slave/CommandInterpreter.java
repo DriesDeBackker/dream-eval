@@ -24,7 +24,7 @@ import evalapp.commands.SignalCommand;
 import evalapp.commands.VarCommand;
 import evalapp.valgenerator.ValueGenerator;
 
-public class Deployer {
+public class CommandInterpreter {
 	private String hostname;
 
 	protected Logger logger;
@@ -33,7 +33,7 @@ public class Deployer {
 
 	private List<String> varsToWaitFor;
 
-	public Deployer(String host) {
+	public CommandInterpreter(String host) {
 		this.hostname = host;
 		Consts.hostName = host;
 
@@ -52,6 +52,8 @@ public class Deployer {
 			System.out.println(deployed);
 			return deployed;
 		}, cs);
+
+		new Var<Boolean>("ready", Boolean.TRUE);
 
 		System.out.println("Client initialization finished.");
 		logger.fine("Client initialization finished.");
@@ -75,6 +77,7 @@ public class Deployer {
 		}
 	}
 
+	@SuppressWarnings("rawtypes")
 	public boolean process(Command command) {
 		if (command == null || !command.getTarget().equals(this.hostname)) {
 			return false;
@@ -129,7 +132,7 @@ public class Deployer {
 		this.addReactiveVar(command.getRemvar(), newRemVar);
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void processSignalCommand(SignalCommand command) {
 		UpdateProducer<?>[] args = Arrays.stream(command.getArgs()).parallel().map(name -> this.reactivevars.get(name))
 				.sequential().toArray(UpdateProducer<?>[]::new);

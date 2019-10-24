@@ -5,19 +5,19 @@ import java.util.function.Function;
 
 import dream.client.UpdateProducer;
 
-public class SignalCommand extends Command implements Serializable {
+public class SignalCommand<T extends Serializable> extends Command implements Serializable {
 
 	private static final long serialVersionUID = -5516875372186775573L;
 
 	private String[] args;
-	private Function<UpdateProducer<?>, ?> fn;
+	private Function<UpdateProducer<T>, ?> fn;
 	private String name;
 
-	public SignalCommand(String target, String name, Function<UpdateProducer<?>, ?> fn, String... args) {
+	public SignalCommand(String target, String name, Function<UpdateProducer<T>, ?> fn, String... args) {
 		super(target);
-		this.setName(name);
-		this.setFn(fn);
-		this.setArgs(args);
+		this.name = name;
+		this.fn = fn;
+		this.args = args;
 	}
 
 	/*
@@ -35,24 +35,12 @@ public class SignalCommand extends Command implements Serializable {
 		return name;
 	}
 
-	private void setName(String name) {
-		this.name = name;
-	}
-
-	public Function<UpdateProducer<?>, ?> getFn() {
+	public Function<UpdateProducer<T>, ?> getFn() {
 		return fn;
-	}
-
-	private void setFn(Function<UpdateProducer<?>, ?> fn) {
-		this.fn = fn;
 	}
 
 	public String[] getArgs() {
 		return args;
-	}
-
-	private void setArgs(String[] args) {
-		this.args = args;
 	}
 
 }

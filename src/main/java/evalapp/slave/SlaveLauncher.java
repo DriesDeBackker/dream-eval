@@ -1,9 +1,9 @@
 package evalapp.slave;
 
-public class DeployerLauncher {
+public class SlaveLauncher {
 
 	public static void main(String[] args) {
-		new Deployer("slave1");
+		new CommandInterpreter("host5");
 	}
 
 }
