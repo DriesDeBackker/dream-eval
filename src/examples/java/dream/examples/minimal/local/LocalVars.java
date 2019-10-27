@@ -8,7 +8,7 @@ public class LocalVars extends Client {
 
 	public LocalVars() {
 		super(HOSTNAME);
-		Var<Integer> a = new Var<>("counter", Integer.valueOf(0));
+		Var<Integer> a = new Var<>("var1", Integer.valueOf(0));
 		count(a);
 	}
 
@@ -16,9 +16,11 @@ public class LocalVars extends Client {
 		Integer counter = 1;
 		while (true) {
 			a.set(counter);
+			System.out.println(counter);
+			System.out.println(System.currentTimeMillis());
 			counter++;
 			try {
-				Thread.sleep(2000);
+				Thread.sleep(10000);
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

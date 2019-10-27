@@ -21,6 +21,7 @@ import dream.common.packets.EventPacket;
 import dream.common.packets.content.Advertisement;
 import dream.common.packets.content.Event;
 import dream.common.packets.content.Subscription;
+import evalapp.master.Update;
 
 public class Signal<T extends Serializable> implements TimeChangingValue<T>, UpdateProducer<T>, UpdateConsumer {
 
@@ -36,6 +37,8 @@ public class Signal<T extends Serializable> implements TimeChangingValue<T>, Upd
 	private final String host;
 	private final String object;
 	private final List<SerializablePredicate<T>> constraints = new ArrayList<>();
+
+	private final List<Update> updateLog = new ArrayList<>();
 
 	private final Supplier<T> evaluation;
 
@@ -87,6 +90,10 @@ public class Signal<T extends Serializable> implements TimeChangingValue<T>, Upd
 			try {
 				val = evaluate();
 				logger.finest("New value computed for the reactive object: " + val);
+				// log the update time
+				updateLog.add(new Update(anyPkt.getSource(), System.currentTimeMillis()));
+				System.out.println("signal " + this.object + "@" + this.host + " has a new value: " + val.toString());
+				System.out.println(System.currentTimeMillis());
 			} catch (final Exception e) {
 				logger.log(Level.INFO,
 						"Exception during the evaluation of the expression. Acknowledging the producers, releasing the locks, and returning.",
@@ -188,6 +195,10 @@ public class Signal<T extends Serializable> implements TimeChangingValue<T>, Upd
 	@Override
 	public String getObject() {
 		return object;
+	}
+
+	public List<Update> getUpdateLog() {
+		return updateLog;
 	}
 
 	@Override

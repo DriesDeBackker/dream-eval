@@ -9,7 +9,7 @@ import java.util.Set;
 import evalapp.master.Config;
 
 public class GraphGenerator {
-	private Graph graph;
+	private DependencyGraph graph;
 	private Random r;
 
 	public GraphGenerator(long seed) {
@@ -17,7 +17,7 @@ public class GraphGenerator {
 	}
 
 	public void generateGraph() {
-		this.graph = new Graph();
+		this.graph = new DependencyGraph();
 		generateClients();
 		generateVars();
 		generateSignals();
@@ -27,7 +27,7 @@ public class GraphGenerator {
 		this.r.setSeed(seed);
 	}
 
-	public Graph getGraph() {
+	public DependencyGraph getGraph() {
 		return this.graph;
 	}
 

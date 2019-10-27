@@ -12,10 +12,13 @@ public class SignalCommand<T extends Serializable> extends Command implements Se
 	private String[] args;
 	private Function<UpdateProducer<T>, ?> fn;
 	private String name;
+	private Boolean finalNode;
 
-	public SignalCommand(String target, String name, Function<UpdateProducer<T>, ?> fn, String... args) {
+	public SignalCommand(String target, String name, Boolean finalNode, Function<UpdateProducer<T>, ?> fn,
+			String... args) {
 		super(target);
 		this.name = name;
+		this.finalNode = finalNode;
 		this.fn = fn;
 		this.args = args;
 	}
@@ -33,6 +36,10 @@ public class SignalCommand<T extends Serializable> extends Command implements Se
 
 	public String getName() {
 		return name;
+	}
+
+	public boolean isFinalNode() {
+		return finalNode;
 	}
 
 	public Function<UpdateProducer<T>, ?> getFn() {

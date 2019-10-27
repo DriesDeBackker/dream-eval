@@ -7,18 +7,18 @@ import java.util.Map;
 import java.util.function.Function;
 
 import dream.client.UpdateProducer;
-import evalapp.graphgenerator.Graph;
+import evalapp.graphgenerator.DependencyGraph;
 import evalapp.valgenerator.ValueGenerator;
 
 public class CommandsGenerator<T extends Serializable> {
 
 	private List<Command> commands;
-	private Graph graph;
+	private DependencyGraph graph;
 	private ValueGenerator<T> vg;
 	private IterationSpecifics is;
 	private List<Function<UpdateProducer<T>, ?>> fns;
 
-	public CommandsGenerator(Graph graph, ValueGenerator<T> vg, IterationSpecifics is,
+	public CommandsGenerator(DependencyGraph graph, ValueGenerator<T> vg, IterationSpecifics is,
 			List<Function<UpdateProducer<T>, ?>> fns) {
 		this.commands = new ArrayList<Command>();
 		this.graph = graph;
@@ -47,7 +47,8 @@ public class CommandsGenerator<T extends Serializable> {
 					}
 				}
 				String[] args = deps.toArray(new String[deps.size()]);
-				commands.add(new SignalCommand<T>(sigHost, sig, fns.get(deps.size() - 1), args));
+				commands.add(new SignalCommand<T>(sigHost, sig, Boolean.valueOf(graph.isFinal(sig)),
+						fns.get(deps.size() - 1), args));
 			}
 		}
 	}
@@ -56,7 +57,7 @@ public class CommandsGenerator<T extends Serializable> {
 		return commands;
 	}
 
-	public void setGraph(Graph graph) {
+	public void setGraph(DependencyGraph graph) {
 		this.graph = graph;
 	}
 }

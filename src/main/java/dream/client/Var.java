@@ -32,6 +32,8 @@ public class Var<T extends Serializable> implements UpdateProducer<T>, LockAppli
 	private final Queue<Object> waitingModifications = new ArrayDeque<>();
 	private int pendingAcks = 0;
 
+	private List<Long> updateLog = new ArrayList<Long>();
+
 	private T val;
 
 	public Var(String object, T val) {
@@ -99,6 +101,10 @@ public class Var<T extends Serializable> implements UpdateProducer<T>, LockAppli
 			val = supplier.get();
 		}
 
+		updateLog.add(System.currentTimeMillis());
+		System.out.println("Var " + this.object + "@" + this.host + " has a new value: " + val.toString());
+		System.out.println(System.currentTimeMillis());
+
 		// Propagate modification to local and remote subscribers
 		final Event<? extends Serializable> ev = new Event<>(Consts.hostName, object, val);
 		final String source = ev.getSignature();
@@ -147,6 +153,10 @@ public class Var<T extends Serializable> implements UpdateProducer<T>, LockAppli
 	@Override
 	public String getObject() {
 		return object;
+	}
+
+	public List<Long> getUpdateLog() {
+		return updateLog;
 	}
 
 	@Override

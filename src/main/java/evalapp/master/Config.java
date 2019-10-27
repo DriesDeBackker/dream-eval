@@ -19,6 +19,7 @@ public class Config {
 	public final static int values_mean;
 	public final static int values_sd;
 	public final static int random_seed;
+	public final static int experiment_length;
 
 	static {
 
@@ -36,12 +37,13 @@ public class Config {
 		final String graphDepthProperty = properties.getProperty("graphDepth", "4");
 		final String signalsPerLevelAvgProperty = properties.getProperty("signalsPerLevelAvg", "2");
 		final String depsPerSignalAvgProperty = properties.getProperty("depsPerSignalAvg", "2");
-		final String nodesLocalityProperty = properties.getProperty("graphDepth", "0.5");
+		final String nodesLocalityProperty = properties.getProperty("nodesLocality", "0.5");
 		final String updateIntervalMeanProperty = properties.getProperty("updateIntervalMean", "1000");
 		final String updateIntervalSDProperty = properties.getProperty("updateIntervalSD", "100");
 		final String valuesMeanProperty = properties.getProperty("valuesMean", "100");
 		final String valuesSDProperty = properties.getProperty("valuesSD", "20");
 		final String randomSeedProperty = properties.getProperty("randomSeed", "1815");
+		final String experimentLengthProperty = properties.getProperty("experimentLength", "600000");
 
 		number_of_vars = Integer.parseInt(numberOfVarsProperty);
 		graph_depth = Integer.parseInt(graphDepthProperty);
@@ -53,6 +55,7 @@ public class Config {
 		values_mean = Integer.parseInt(valuesMeanProperty);
 		values_sd = Integer.parseInt(valuesSDProperty);
 		random_seed = Integer.parseInt(randomSeedProperty);
+		experiment_length = Integer.parseInt(experimentLengthProperty);
 
 	}
 }

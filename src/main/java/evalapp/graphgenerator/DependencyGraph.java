@@ -2,10 +2,13 @@ package evalapp.graphgenerator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-public class Graph {
+public class DependencyGraph {
 
 	private final List<String> clients;
 	private Map<String, String> varLocationsByName;
@@ -13,7 +16,7 @@ public class Graph {
 	private Map<String, List<String>> signalDepsByName;
 	private List<List<String>> nodesByLevel;
 
-	public Graph() {
+	public DependencyGraph() {
 		clients = new ArrayList<String>();
 		varLocationsByName = new HashMap<String, String>();
 		signalLocationsByName = new HashMap<String, String>();
@@ -125,4 +128,37 @@ public class Graph {
 		return this.nodesByLevel.size();
 	}
 
+	public boolean isFinal(String nodeName) {
+		for (List<String> deps : this.signalDepsByName.values()) {
+			for (String dep : deps) {
+				if (nodeName.equals(dep)) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	public boolean isVar(String nodeName) {
+		return this.getVars().containsKey(nodeName);
+	}
+
+	public Set<String> getFinalNodesOf(String var) {
+		Set<String> closureNodes = new HashSet<>();
+		closureNodes.add(var);
+		for (int l = 2; l <= getNumberOfLevels(); l++) {
+			Set<String> additions = new HashSet<>();
+			for (String node : this.getNodesAtLevel(l)) {
+				for (String dep : this.getSignalDeps(node)) {
+					if (closureNodes.contains(dep)) {
+						additions.add(node);
+					}
+				}
+			}
+			closureNodes.addAll(additions);
+		}
+		Set<String> finalNodes = closureNodes.parallelStream().filter(n -> this.isFinal(n) && !this.isVar(n))
+				.collect(Collectors.toSet());
+		return finalNodes;
+	}
 }

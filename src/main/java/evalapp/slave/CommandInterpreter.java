@@ -18,10 +18,13 @@ import dream.client.UpdateProducer;
 import dream.client.Var;
 import dream.common.Consts;
 import evalapp.commands.Command;
+import evalapp.commands.EndCommand;
 import evalapp.commands.IterationSpecifics;
 import evalapp.commands.RemoteVarCommand;
 import evalapp.commands.SignalCommand;
+import evalapp.commands.StartCommand;
 import evalapp.commands.VarCommand;
+import evalapp.master.Update;
 import evalapp.valgenerator.ValueGenerator;
 
 public class CommandInterpreter {
@@ -29,9 +32,15 @@ public class CommandInterpreter {
 
 	protected Logger logger;
 
-	private Map<String, UpdateProducer<?>> reactivevars = new HashMap<String, UpdateProducer<?>>();
+	private Map<String, UpdateProducer<?>> updateProducers = new HashMap<>();
+	private List<Var<?>> vars = new ArrayList<>();
+	private List<Signal<?>> finalNodes = new ArrayList<>();
 
 	private List<String> varsToWaitFor;
+	private boolean running = false;
+
+	private Var<HashMap<String, List<Long>>> varUpdates;
+	private Var<HashMap<String, List<Update>>> finalNodeUpdates;
 
 	public CommandInterpreter(String host) {
 		this.hostname = host;
@@ -53,7 +62,8 @@ public class CommandInterpreter {
 			return deployed;
 		}, cs);
 
-		new Var<Boolean>("ready", Boolean.TRUE);
+		this.varUpdates = new Var<HashMap<String, List<Long>>>("varUpdates", null);
+		this.finalNodeUpdates = new Var<HashMap<String, List<Update>>>("finalNodeUpdates", null);
 
 		System.out.println("Client initialization finished.");
 		logger.fine("Client initialization finished.");
@@ -78,11 +88,17 @@ public class CommandInterpreter {
 	}
 
 	@SuppressWarnings("rawtypes")
-	public boolean process(Command command) {
+	private boolean process(Command command) {
 		if (command == null || !command.getTarget().equals(this.hostname)) {
 			return false;
 		}
-		if (command instanceof VarCommand<?>) {
+		if (command instanceof StartCommand) {
+			System.out.println("Experiment started.");
+			this.processStartCommand();
+		} else if (command instanceof EndCommand) {
+			System.out.println("Experiment finished. Sending results...");
+			this.processEndCommand();
+		} else if (command instanceof VarCommand<?>) {
 			System.out.println("Deploying a new Var.");
 			logger.fine("Deploying a new Var.");
 			this.processVarCommand((VarCommand<?>) command);
@@ -98,11 +114,28 @@ public class CommandInterpreter {
 		return true;
 	}
 
+	private void processStartCommand() {
+		this.running = true;
+	}
+
+	private void processEndCommand() {
+		this.running = false;
+		HashMap<String, List<Long>> varUpdates = new HashMap<String, List<Long>>();
+		for (Var<?> v : vars) {
+			varUpdates.put(v.getObject(), v.getUpdateLog());
+		}
+		this.varUpdates.set(varUpdates);
+		HashMap<String, List<Update>> finalNodeUpdates = new HashMap<>();
+		for (Signal<?> s : finalNodes) {
+			finalNodeUpdates.put(s.getObject(), s.getUpdateLog());
+		}
+		this.finalNodeUpdates.set(finalNodeUpdates);
+	}
+
 	private void processVarCommand(VarCommand<?> command) {
-		// TODO add a thread that executes a modifying function enclosed in the
-		// command!!!
 		Var<?> newVar = new Var<>(command.getName(), command.getInitialValue());
-		this.addReactiveVar(command.getName(), newVar);
+		this.addUpdateProducer(command.getName(), newVar);
+		this.vars.add(newVar);
 
 		Thread t1 = new Thread(new Runnable() {
 			public void run() {
@@ -112,7 +145,9 @@ public class CommandInterpreter {
 				ValueGenerator<?> g = command.getGenerator();
 				Random r = new Random();
 				while (true) {
-					newVar.setUnsafe(g.next());
+					if (running) {
+						newVar.setUnsafe(g.next());
+					}
 					double next = r.nextGaussian() * sd + mean;
 					try {
 						Thread.sleep((long) next);
@@ -129,13 +164,13 @@ public class CommandInterpreter {
 		this.varsToWaitFor.add(command.getRemvar() + "@" + command.getRemhost());
 		this.waitForVars();
 		RemoteVar<? extends Serializable> newRemVar = new RemoteVar<>(command.getRemhost(), command.getRemvar());
-		this.addReactiveVar(command.getRemvar(), newRemVar);
+		this.addUpdateProducer(command.getRemvar(), newRemVar);
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void processSignalCommand(SignalCommand command) {
-		UpdateProducer<?>[] args = Arrays.stream(command.getArgs()).parallel().map(name -> this.reactivevars.get(name))
-				.sequential().toArray(UpdateProducer<?>[]::new);
+		UpdateProducer<?>[] args = Arrays.stream(command.getArgs()).parallel()
+				.map(name -> this.updateProducers.get(name)).sequential().toArray(UpdateProducer<?>[]::new);
 		Function<UpdateProducer<?>, ?> fn = command.getFn();
 		int nbArgs = args.length;
 		for (int i = 0; i < nbArgs - 1; i++) {
@@ -144,7 +179,10 @@ public class CommandInterpreter {
 		final Function<UpdateProducer<?>, ?> fnend = fn;
 		Supplier<?> closure = () -> fnend.apply(args[nbArgs - 1]);
 		Signal<?> newSignal = new Signal<>(command.getName(), (Supplier<? extends Serializable>) closure, args);
-		this.addReactiveVar(command.getName(), newSignal);
+		this.addUpdateProducer(command.getName(), newSignal);
+		if (command.isFinalNode()) {
+			this.finalNodes.add(newSignal);
+		}
 	}
 
 	private void addInitialVarsToWaitFor() {
@@ -152,8 +190,8 @@ public class CommandInterpreter {
 		this.varsToWaitFor.add("commands@master");
 	}
 
-	private void addReactiveVar(String name, UpdateProducer<?> rv) {
-		this.reactivevars.put(name, rv);
+	private void addUpdateProducer(String name, UpdateProducer<?> rv) {
+		this.updateProducers.put(name, rv);
 	}
 
 	private boolean allVarsAvailable() {
