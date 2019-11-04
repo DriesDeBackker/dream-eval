@@ -4,6 +4,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
 
+import evalapp.commands.Experiment;
+
 public class Config {
 
 	private static final Properties properties = new Properties();
@@ -20,6 +22,7 @@ public class Config {
 	public final static int values_sd;
 	public final static int random_seed;
 	public final static int experiment_length;
+	public final static Experiment experiment;
 
 	static {
 
@@ -43,6 +46,7 @@ public class Config {
 		final String valuesMeanProperty = properties.getProperty("valuesMean", "100");
 		final String valuesSDProperty = properties.getProperty("valuesSD", "20");
 		final String randomSeedProperty = properties.getProperty("randomSeed", "1815");
+		final String experiment_type = properties.getProperty("experiment", "traffic");
 		final String experimentLengthProperty = properties.getProperty("experimentLength", "600000");
 
 		number_of_vars = Integer.parseInt(numberOfVarsProperty);
@@ -56,6 +60,11 @@ public class Config {
 		values_sd = Integer.parseInt(valuesSDProperty);
 		random_seed = Integer.parseInt(randomSeedProperty);
 		experiment_length = Integer.parseInt(experimentLengthProperty);
-
+		System.out.println("CONFIG: " + experiment_type);
+		if (experiment_type.equals("traffic")) {
+			experiment = Experiment.TRAFFIC;
+		} else /* if (experiment_type.equals("delay")) */ {
+			experiment = Experiment.DELAY;
+		}
 	}
 }

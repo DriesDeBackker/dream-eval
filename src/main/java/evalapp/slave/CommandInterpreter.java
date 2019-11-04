@@ -19,6 +19,7 @@ import dream.client.Var;
 import dream.common.Consts;
 import evalapp.commands.Command;
 import evalapp.commands.EndCommand;
+import evalapp.commands.Experiment;
 import evalapp.commands.IterationSpecifics;
 import evalapp.commands.RemoteVarCommand;
 import evalapp.commands.SignalCommand;
@@ -64,6 +65,7 @@ public class CommandInterpreter {
 
 		this.varUpdates = new Var<HashMap<String, List<Long>>>("varUpdates", null);
 		this.finalNodeUpdates = new Var<HashMap<String, List<Update>>>("finalNodeUpdates", null);
+		new Var<Boolean>("ready", Boolean.TRUE);
 
 		System.out.println("Client initialization finished.");
 		logger.fine("Client initialization finished.");
@@ -96,8 +98,8 @@ public class CommandInterpreter {
 			System.out.println("Experiment started.");
 			this.processStartCommand();
 		} else if (command instanceof EndCommand) {
-			System.out.println("Experiment finished. Sending results...");
-			this.processEndCommand();
+			System.out.println("Experiment finished.");
+			this.processEndCommand((EndCommand) command);
 		} else if (command instanceof VarCommand<?>) {
 			System.out.println("Deploying a new Var.");
 			logger.fine("Deploying a new Var.");
@@ -118,18 +120,22 @@ public class CommandInterpreter {
 		this.running = true;
 	}
 
-	private void processEndCommand() {
+	private void processEndCommand(EndCommand command) {
 		this.running = false;
-		HashMap<String, List<Long>> varUpdates = new HashMap<String, List<Long>>();
-		for (Var<?> v : vars) {
-			varUpdates.put(v.getObject(), v.getUpdateLog());
+		if (command.getExperiment() == Experiment.DELAY) {
+			System.out.println("Sending results...");
+			HashMap<String, List<Long>> varUpdates = new HashMap<String, List<Long>>();
+			for (Var<?> v : vars) {
+				varUpdates.put(v.getObject(), v.getUpdateLog());
+			}
+			this.varUpdates.set(varUpdates);
+			HashMap<String, List<Update>> finalNodeUpdates = new HashMap<>();
+			System.out.println("finalNodes: " + finalNodes.toString());
+			for (Signal<?> s : finalNodes) {
+				finalNodeUpdates.put(s.getObject(), s.getUpdateLog());
+			}
+			this.finalNodeUpdates.set(finalNodeUpdates);
 		}
-		this.varUpdates.set(varUpdates);
-		HashMap<String, List<Update>> finalNodeUpdates = new HashMap<>();
-		for (Signal<?> s : finalNodes) {
-			finalNodeUpdates.put(s.getObject(), s.getUpdateLog());
-		}
-		this.finalNodeUpdates.set(finalNodeUpdates);
 	}
 
 	private void processVarCommand(VarCommand<?> command) {

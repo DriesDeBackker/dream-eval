@@ -2,8 +2,10 @@ package evalapp.commands;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import dream.client.UpdateProducer;
@@ -17,9 +19,13 @@ public class CommandsGenerator<T extends Serializable> {
 	private ValueGenerator<T> vg;
 	private IterationSpecifics is;
 	private List<Function<UpdateProducer<T>, ?>> fns;
+	private Experiment experiment;
 
-	public CommandsGenerator(DependencyGraph graph, ValueGenerator<T> vg, IterationSpecifics is,
+	public CommandsGenerator(Experiment exp, DependencyGraph graph, ValueGenerator<T> vg, IterationSpecifics is,
 			List<Function<UpdateProducer<T>, ?>> fns) {
+		System.out.println("Initializing the commandsGenerator");
+		System.out.println(exp.toString());
+		this.experiment = exp;
 		this.commands = new ArrayList<Command>();
 		this.graph = graph;
 		this.vg = vg;
@@ -28,12 +34,26 @@ public class CommandsGenerator<T extends Serializable> {
 	}
 
 	public void generateCommands() {
+		System.out.println("GENERATING!!!!!!!!!!!!");
+		generateVarCommands();
+		generateMainCommands();
+		System.out.println(this.experiment.toString());
+		if (experiment.equals(Experiment.DELAY)) {
+			System.out.println("generating final commands");
+			generateFinalCommands();
+		}
+	}
+
+	private void generateVarCommands() {
 		this.commands = new ArrayList<Command>();
 		// Generate Var commands for the first graph level.
 		Map<String, String> varLocationsByName = graph.getVars();
 		for (String var : varLocationsByName.keySet()) {
 			commands.add(new VarCommand<T>(varLocationsByName.get(var), var, vg.next(), vg, is));
 		}
+	}
+
+	private void generateMainCommands() {
 		// Generate commands for the other graph levels.
 		for (int l = 2; l <= graph.getNumberOfLevels(); l++) {
 			List<String> level = graph.getNodesAtLevel(l);
@@ -47,10 +67,23 @@ public class CommandsGenerator<T extends Serializable> {
 					}
 				}
 				String[] args = deps.toArray(new String[deps.size()]);
-				commands.add(new SignalCommand<T>(sigHost, sig, Boolean.valueOf(graph.isFinal(sig)),
-						fns.get(deps.size() - 1), args));
+				commands.add(new SignalCommand<T>(sigHost, sig, Boolean.FALSE, fns.get(deps.size() - 1), args));
 			}
 		}
+	}
+
+	private void generateFinalCommands() {
+		Map<String, String> hostsForVars = graph.getVars();
+		Map<String, Set<String>> finalsForVars = new HashMap<>();
+		for (String var : hostsForVars.keySet()) {
+			Set<String> finals = graph.getFinalNodesOf(var);
+			finalsForVars.put(var, finals);
+			for (String node : finals) {
+				commands.add(new RemoteVarCommand(hostsForVars.get(var), graph.getHost(node), node));
+				commands.add(new SignalCommand<T>(hostsForVars.get(var), var + node, Boolean.TRUE, fns.get(0), node));
+			}
+		}
+
 	}
 
 	public List<Command> getCommands() {
