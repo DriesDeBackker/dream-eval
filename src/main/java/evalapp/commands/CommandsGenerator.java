@@ -23,8 +23,6 @@ public class CommandsGenerator<T extends Serializable> {
 
 	public CommandsGenerator(Experiment exp, DependencyGraph graph, ValueGenerator<T> vg, IterationSpecifics is,
 			List<Function<UpdateProducer<T>, ?>> fns) {
-		System.out.println("Initializing the commandsGenerator");
-		System.out.println(exp.toString());
 		this.experiment = exp;
 		this.commands = new ArrayList<Command>();
 		this.graph = graph;
@@ -34,10 +32,8 @@ public class CommandsGenerator<T extends Serializable> {
 	}
 
 	public void generateCommands() {
-		System.out.println("GENERATING!!!!!!!!!!!!");
 		generateVarCommands();
 		generateMainCommands();
-		System.out.println(this.experiment.toString());
 		if (experiment.equals(Experiment.DELAY)) {
 			System.out.println("generating final commands");
 			generateFinalCommands();

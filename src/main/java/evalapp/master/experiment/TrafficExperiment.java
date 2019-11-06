@@ -12,17 +12,13 @@ public class TrafficExperiment extends ProgramDeployer {
 
 	@Override
 	protected void prepareExperiment() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	protected void gatherResults() {
-		// Nothing to do here: results gathered using e.g. Wireshark.
-	}
-
-	@Override
-	protected void processResults() {
 		// Nothing to do here.
+	}
+
+	@Override
+	protected void endExperiment() {
+		System.out.println("TIME'S UP! EXPERIMENT FINISHED!");
+		// We do not actively stop the experiment as this affects the average
+		// traffic rate in e.g. Wireshark if the latter is still measuring.
 	}
 }

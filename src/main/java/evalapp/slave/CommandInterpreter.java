@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
 
 import dream.client.DreamClient;
 import dream.client.RemoteVar;
@@ -31,8 +30,6 @@ import evalapp.valgenerator.ValueGenerator;
 public class CommandInterpreter {
 	private String hostname;
 
-	protected Logger logger;
-
 	private Map<String, UpdateProducer<?>> updateProducers = new HashMap<>();
 	private List<Var<?>> vars = new ArrayList<>();
 	private List<Signal<?>> finalNodes = new ArrayList<>();
@@ -47,8 +44,6 @@ public class CommandInterpreter {
 		this.hostname = host;
 		Consts.hostName = host;
 
-		logger = Logger.getLogger(host);
-
 		DreamClient.instance.connect();
 
 		addInitialVarsToWaitFor();
@@ -57,9 +52,7 @@ public class CommandInterpreter {
 
 		RemoteVar<Command> cs = new RemoteVar<Command>("master", "commands");
 		new Signal<Boolean>("processcommands", () -> {
-			System.out.println("received command.");
 			boolean deployed = process(cs.get());
-			System.out.println(deployed);
 			return deployed;
 		}, cs);
 
@@ -68,7 +61,6 @@ public class CommandInterpreter {
 		new Var<Boolean>("ready", Boolean.TRUE);
 
 		System.out.println("Client initialization finished.");
-		logger.fine("Client initialization finished.");
 	}
 
 	private void waitForVars() {
@@ -76,13 +68,11 @@ public class CommandInterpreter {
 		try {
 			if (!this.varsToWaitFor.isEmpty())
 				System.out.println("Waiting for Vars: " + this.varsToWaitFor.toString());
-			logger.fine("Waiting for Vars: " + this.varsToWaitFor.toString());
 			while (!allVarsAvailable()) {
 				Thread.sleep(500);
 			}
 			assert (allVarsAvailable());
 			System.out.println("Vars are now all available.");
-			logger.fine("Vars are now all available.");
 			this.varsToWaitFor.clear();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
@@ -102,15 +92,12 @@ public class CommandInterpreter {
 			this.processEndCommand((EndCommand) command);
 		} else if (command instanceof VarCommand<?>) {
 			System.out.println("Deploying a new Var.");
-			logger.fine("Deploying a new Var.");
 			this.processVarCommand((VarCommand<?>) command);
 		} else if (command instanceof RemoteVarCommand) {
 			System.out.println("Deploying a new RemoteVar.");
-			logger.fine("Deploying a new RemoteVar.");
 			this.processRemoteVarCommand((RemoteVarCommand) command);
 		} else if (command instanceof SignalCommand) {
 			System.out.println("Deploying a new Signal.");
-			logger.fine("Deploying a new Signal.");
 			this.processSignalCommand((SignalCommand) command);
 		}
 		return true;
@@ -130,11 +117,11 @@ public class CommandInterpreter {
 			}
 			this.varUpdates.set(varUpdates);
 			HashMap<String, List<Update>> finalNodeUpdates = new HashMap<>();
-			System.out.println("finalNodes: " + finalNodes.toString());
 			for (Signal<?> s : finalNodes) {
 				finalNodeUpdates.put(s.getObject(), s.getUpdateLog());
 			}
 			this.finalNodeUpdates.set(finalNodeUpdates);
+			new Var<Boolean>("resultsSent", Boolean.TRUE);
 		}
 	}
 

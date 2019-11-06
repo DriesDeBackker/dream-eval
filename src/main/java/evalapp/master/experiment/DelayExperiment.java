@@ -8,7 +8,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import dream.client.DreamClient;
 import dream.client.RemoteVar;
+import evalapp.commands.EndCommand;
 import evalapp.commands.Experiment;
 import evalapp.master.Update;
 
@@ -22,6 +24,7 @@ public class DelayExperiment extends ProgramDeployer {
 	protected Map<String, List<Long>> varUpdates;
 	protected Map<String, List<Update>> finalNodeProxyUpdates;
 	protected double meanPropDelay;
+	protected boolean resultsIn = false;
 
 	public DelayExperiment() {
 		super(HOSTNAME, EXPERIMENT);
@@ -43,19 +46,58 @@ public class DelayExperiment extends ProgramDeployer {
 
 	protected void prepareExperiment() {
 		for (int i = 1; i < clients.length; i++) {
-			RemoteVar<HashMap<String, List<Long>>> nrm = new RemoteVar<HashMap<String, List<Long>>>(clients[i],
-					"varUpdates");
-			System.out.println(nrm.toString());
-			System.out.println(this.varUpdateRemVars.toString());
+			RemoteVar<HashMap<String, List<Long>>> nrm = new RemoteVar<>(clients[i], "varUpdates");
 			this.varUpdateRemVars.add(nrm);
 			this.finalNodeProxyUpdateRemVars
 					.add(new RemoteVar<HashMap<String, List<Update>>>(clients[i], "finalNodeUpdates"));
 		}
 	}
 
-	protected void gatherResults() {
+	@Override
+	protected void endExperiment() {
+		for (int i = 1; i <= clients.length; i++) {
+			cmdsVar.set(new EndCommand("host" + i, exp));
+			try {
+				Thread.sleep(250);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		awaitResults();
+		gatherResults();
+		processResults();
+	}
+
+	private void awaitResults() {
+		List<String> resultVars = new ArrayList<>();
+		for (int i = 0; i < clients.length; i++) {
+			resultVars.add("resultsSent@" + clients[i]);
+		}
+		while (!resultsIn(resultVars)) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	private boolean resultsIn(List<String> resultVars) {
+		for (String var : resultVars) {
+			if (!DreamClient.instance.listVariables().contains(var)) {
+				return false;
+			} else {
+				System.out.println(
+						"Results of client" + Integer.toString(resultVars.indexOf(var) + 1) + " are available");
+			}
+		}
+		return true;
+	}
+
+	private void gatherResults() {
 		for (RemoteVar<HashMap<String, List<Long>>> rv : this.varUpdateRemVars) {
 			Map<String, List<Long>> varLogs = rv.get();
+			System.out.println("varLogs: " + varLogs.toString());
 			for (String var : varLogs.keySet()) {
 				this.varUpdates.put(var, varLogs.get(var));
 			}
@@ -63,7 +105,6 @@ public class DelayExperiment extends ProgramDeployer {
 		System.out.println("varUpdates: " + this.varUpdates.toString());
 		for (RemoteVar<HashMap<String, List<Update>>> rv : this.finalNodeProxyUpdateRemVars) {
 			Map<String, List<Update>> finalNodeLogs = rv.get();
-			System.out.println("finaleNodeLogs: " + finalNodeLogs.toString());
 			for (String var : finalNodeLogs.keySet()) {
 				this.finalNodeProxyUpdates.put(var, finalNodeLogs.get(var));
 			}
@@ -71,7 +112,7 @@ public class DelayExperiment extends ProgramDeployer {
 		System.out.println("finalNodeUpdates: " + this.finalNodeProxyUpdates.toString());
 	}
 
-	protected void processResults() {
+	private void processResults() {
 		// Get the final nodes for each var. Dispense with unused vars.
 		System.out.println("vars: " + this.varUpdates.keySet().toString());
 		Map<String, Set<String>> finalNodesOfVars = new HashMap<>();

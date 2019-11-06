@@ -11,7 +11,6 @@ import dream.client.UpdateProducer;
 import dream.client.Var;
 import evalapp.commands.Command;
 import evalapp.commands.CommandsGenerator;
-import evalapp.commands.EndCommand;
 import evalapp.commands.Experiment;
 import evalapp.commands.IterationSpecifics;
 import evalapp.commands.StartCommand;
@@ -27,14 +26,13 @@ import evalapp.valgenerator.ValueGenerator;
 public abstract class ProgramDeployer extends Client {
 	private static final String[] clients = { "host1", "host2", "host3", "host4", "host5" };
 
-	private Var<Command> cmdsVar;
-	private GraphGenerator gg;
-	private CommandsGenerator<Integer> cg;
-	private IterationSpecifics is;
-	private ValueGenerator<Integer> vg;
-	private List<Command> cmds;
-	private Experiment exp;
-
+	protected Var<Command> cmdsVar;
+	protected GraphGenerator gg;
+	protected CommandsGenerator<Integer> cg;
+	protected IterationSpecifics is;
+	protected ValueGenerator<Integer> vg;
+	protected List<Command> cmds;
+	protected Experiment exp;
 	protected DependencyGraph graph;
 
 	public ProgramDeployer(String hostname, Experiment exp) {
@@ -55,9 +53,8 @@ public abstract class ProgramDeployer extends Client {
 		deployProgram(cmds);
 		prepareExperiment();
 		askPermissionToStart();
-		runExperiment();
-		gatherResults();
-		processResults();
+		startExperiment();
+		endExperiment();
 	}
 
 	@Override
@@ -142,7 +139,6 @@ public abstract class ProgramDeployer extends Client {
 				e.printStackTrace();
 			}
 		}
-
 	}
 
 	protected abstract void prepareExperiment();
@@ -154,25 +150,23 @@ public abstract class ProgramDeployer extends Client {
 		reader.close();
 	}
 
-	private void runExperiment() {
+	private void startExperiment() {
+		for (int i = 1; i <= clients.length; i++) {
+			cmdsVar.set(new StartCommand("host" + i));
+			try {
+				Thread.sleep(250);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 		try {
-			for (int i = 1; i <= clients.length; i++) {
-				cmdsVar.set(new StartCommand("host" + i));
-				Thread.sleep(250);
-			}
 			Thread.sleep(Config.experiment_length);
-			for (int i = 1; i <= clients.length; i++) {
-				cmdsVar.set(new EndCommand("host" + i, exp));
-				Thread.sleep(250);
-			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
 
-	protected abstract void gatherResults();
-
-	protected abstract void processResults();
+	protected abstract void endExperiment();
 
 	private void setExperiment(Experiment exp) {
 		this.exp = exp;

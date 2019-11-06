@@ -60,7 +60,6 @@ public class Config {
 		values_sd = Integer.parseInt(valuesSDProperty);
 		random_seed = Integer.parseInt(randomSeedProperty);
 		experiment_length = Integer.parseInt(experimentLengthProperty);
-		System.out.println("CONFIG: " + experiment_type);
 		if (experiment_type.equals("traffic")) {
 			experiment = Experiment.TRAFFIC;
 		} else /* if (experiment_type.equals("delay")) */ {

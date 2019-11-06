@@ -7,12 +7,10 @@ import evalapp.master.experiment.TrafficExperiment;
 public class MasterLauncher {
 
 	public static void main(String[] args) {
-		System.out.println(Config.experiment);
+		System.out.println("Experiment type: " + Config.experiment);
 		if (Config.experiment == Experiment.TRAFFIC) {
-			System.out.println("Traffic, bitch");
 			new TrafficExperiment().run();
 		} else {
-			System.out.println("Foooooooooooooooooooooooooooooooooooooooooooooooooooooooook");
 			new DelayExperiment().run();
 		}
 	}
