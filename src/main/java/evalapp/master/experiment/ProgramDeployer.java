@@ -13,7 +13,6 @@ import evalapp.commands.Command;
 import evalapp.commands.CommandsGenerator;
 import evalapp.commands.Experiment;
 import evalapp.commands.IterationSpecifics;
-import evalapp.commands.StartCommand;
 import evalapp.commands.VarCommand;
 import evalapp.graphgenerator.DependencyGraph;
 import evalapp.graphgenerator.GraphGenerator;
@@ -27,6 +26,7 @@ public abstract class ProgramDeployer extends Client {
 	private static final String[] clients = { "host1", "host2", "host3", "host4", "host5" };
 
 	protected Var<Command> cmdsVar;
+	protected Var<Boolean> runningVar;
 	protected GraphGenerator gg;
 	protected CommandsGenerator<Integer> cg;
 	protected IterationSpecifics is;
@@ -43,6 +43,7 @@ public abstract class ProgramDeployer extends Client {
 	@Override
 	protected void init() {
 		this.cmdsVar = new Var<Command>("commands", null);
+		this.runningVar = new Var<Boolean>("running", null);
 		this.is = new IterationSpecifics(Config.update_interval_mean, Config.update_interval_sd);
 		// this.is = new IterationSpecifics(1000, 0);
 		this.gg = new GraphGenerator(Config.random_seed);
@@ -152,14 +153,7 @@ public abstract class ProgramDeployer extends Client {
 	}
 
 	private void startExperiment() {
-		for (int i = 1; i <= clients.length; i++) {
-			cmdsVar.set(new StartCommand("host" + i));
-			try {
-				Thread.sleep(250);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+		this.runningVar.set(Boolean.TRUE);
 		try {
 			Thread.sleep(Config.experiment_length);
 		} catch (InterruptedException e) {

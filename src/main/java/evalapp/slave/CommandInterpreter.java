@@ -17,12 +17,9 @@ import dream.client.UpdateProducer;
 import dream.client.Var;
 import dream.common.Consts;
 import evalapp.commands.Command;
-import evalapp.commands.EndCommand;
-import evalapp.commands.Experiment;
 import evalapp.commands.IterationSpecifics;
 import evalapp.commands.RemoteVarCommand;
 import evalapp.commands.SignalCommand;
-import evalapp.commands.StartCommand;
 import evalapp.commands.VarCommand;
 import evalapp.master.Update;
 import evalapp.valgenerator.ValueGenerator;
@@ -36,10 +33,11 @@ public class CommandInterpreter {
 	private List<Signal<?>> signals = new ArrayList<>();
 
 	private List<String> varsToWaitFor;
-	private boolean running = false;
 
 	private Var<HashMap<String, List<Long>>> varUpdates;
 	private Var<HashMap<String, List<Update>>> finalNodeUpdates;
+
+	private RemoteVar<Boolean> runningVar;
 
 	public CommandInterpreter(String host) {
 		this.hostname = host;
@@ -57,11 +55,15 @@ public class CommandInterpreter {
 			return deployed;
 		}, cs);
 
+		this.runningVar = new RemoteVar<Boolean>("master", "running");
+
 		this.varUpdates = new Var<HashMap<String, List<Long>>>("varUpdates", null);
 		this.finalNodeUpdates = new Var<HashMap<String, List<Update>>>("finalNodeUpdates", null);
 		new Var<Boolean>("ready", Boolean.TRUE);
 
 		System.out.println("Client initialization finished.");
+
+		this.start();
 	}
 
 	private void waitForVars() {
@@ -84,13 +86,6 @@ public class CommandInterpreter {
 	private boolean process(Command command) {
 		if (command == null || !command.getTarget().equals(this.hostname)) {
 			return false;
-		}
-		if (command instanceof StartCommand) {
-			System.out.println("Experiment started.");
-			this.processStartCommand();
-		} else if (command instanceof EndCommand) {
-			System.out.println("Experiment finished.");
-			this.processEndCommand((EndCommand) command);
 		} else if (command instanceof VarCommand<?>) {
 			System.out.println("Deploying a new Var.");
 			this.processVarCommand((VarCommand<?>) command);
@@ -104,27 +99,42 @@ public class CommandInterpreter {
 		return true;
 	}
 
-	private void processStartCommand() {
-		this.running = true;
+	private void start() {
+		System.out.println("Waiting for the go");
+		while (this.runningVar.get() == null) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		System.out.println("Experiment started");
+		while (this.runningVar.get()) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		System.out.println("We zitten hierooooo");
+		this.stop();
 	}
 
-	private void processEndCommand(EndCommand command) {
-		this.running = false;
-		if (command.getExperiment() == Experiment.DELAY) {
-			System.out.println("Sending results...");
-			HashMap<String, List<Long>> varUpdates = new HashMap<String, List<Long>>();
-			for (Var<?> v : vars) {
-				varUpdates.put(v.getObject(), v.getUpdateLog());
-			}
-			this.varUpdates.set(varUpdates);
-			HashMap<String, List<Update>> finalNodeUpdates = new HashMap<>();
-			for (Signal<?> s : signals) {
-
-				finalNodeUpdates.put(s.getObject(), s.getUpdateLog());
-			}
-			this.finalNodeUpdates.set(finalNodeUpdates);
-			new Var<Boolean>("resultsSent", Boolean.TRUE);
+	private void stop() {
+		System.out.println("Experiment finished.");
+		System.out.println("Sending results...");
+		HashMap<String, List<Long>> varUpdates = new HashMap<String, List<Long>>();
+		for (Var<?> v : vars) {
+			varUpdates.put(v.getObject(), v.getUpdateLog());
 		}
+		this.varUpdates.set(varUpdates);
+		HashMap<String, List<Update>> finalNodeUpdates = new HashMap<>();
+		for (Signal<?> s : signals) {
+
+			finalNodeUpdates.put(s.getObject(), s.getUpdateLog());
+		}
+		this.finalNodeUpdates.set(finalNodeUpdates);
+		new Var<Boolean>("resultsSent", Boolean.TRUE);
 	}
 
 	private void processVarCommand(VarCommand<?> command) {
@@ -140,8 +150,13 @@ public class CommandInterpreter {
 				ValueGenerator<?> g = command.getGenerator();
 				Random r = new Random();
 				while (true) {
-					if (running) {
+					if (runningVar.get() == null) {
+						System.out.println("Not yet");
+					} else if (runningVar.get()) {
+						System.out.println("Emitting");
 						newVar.setUnsafe(g.next());
+					} else if (!runningVar.get()) {
+						System.out.println("Not anymore");
 					}
 					double next = r.nextGaussian() * sd + mean;
 					try {
@@ -184,6 +199,7 @@ public class CommandInterpreter {
 	private void addInitialVarsToWaitFor() {
 		this.varsToWaitFor = new ArrayList<String>();
 		this.varsToWaitFor.add("commands@master");
+		this.varsToWaitFor.add("running@master");
 	}
 
 	private void addUpdateProducer(String name, UpdateProducer<?> rv) {
