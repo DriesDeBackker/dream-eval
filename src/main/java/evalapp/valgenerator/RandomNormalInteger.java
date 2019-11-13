@@ -3,8 +3,6 @@ package evalapp.valgenerator;
 import java.io.Serializable;
 import java.util.Random;
 
-import evalapp.valgenerator.ValueGenerator;
-
 public class RandomNormalInteger implements ValueGenerator<Integer>, Serializable {
 
 	private static final long serialVersionUID = -9056726378165269760L;

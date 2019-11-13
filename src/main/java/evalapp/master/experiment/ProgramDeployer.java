@@ -44,6 +44,7 @@ public abstract class ProgramDeployer extends Client {
 	protected void init() {
 		this.cmdsVar = new Var<Command>("commands", null);
 		this.is = new IterationSpecifics(Config.update_interval_mean, Config.update_interval_sd);
+		// this.is = new IterationSpecifics(1000, 0);
 		this.gg = new GraphGenerator(Config.random_seed);
 		this.vg = new RandomNormalInteger(Config.values_mean, Config.values_sd);
 	}

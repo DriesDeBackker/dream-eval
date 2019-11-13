@@ -45,7 +45,7 @@ public class DelayExperiment extends ProgramDeployer {
 	}
 
 	protected void prepareExperiment() {
-		for (int i = 1; i < clients.length; i++) {
+		for (int i = 0; i < clients.length; i++) {
 			RemoteVar<HashMap<String, List<Long>>> nrm = new RemoteVar<>(clients[i], "varUpdates");
 			this.varUpdateRemVars.add(nrm);
 			this.finalNodeProxyUpdateRemVars
@@ -105,6 +105,7 @@ public class DelayExperiment extends ProgramDeployer {
 		System.out.println("varUpdates: " + this.varUpdates.toString());
 		for (RemoteVar<HashMap<String, List<Update>>> rv : this.finalNodeProxyUpdateRemVars) {
 			Map<String, List<Update>> finalNodeLogs = rv.get();
+			System.out.println("finalNodeUpdateLogs: " + finalNodeLogs.toString());
 			for (String var : finalNodeLogs.keySet()) {
 				this.finalNodeProxyUpdates.put(var, finalNodeLogs.get(var));
 			}

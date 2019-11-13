@@ -75,7 +75,9 @@ public class CommandsGenerator<T extends Serializable> {
 			Set<String> finals = graph.getFinalNodesOf(var);
 			finalsForVars.put(var, finals);
 			for (String node : finals) {
-				commands.add(new RemoteVarCommand(hostsForVars.get(var), graph.getHost(node), node));
+				if (!hostsForVars.get(var).equals(graph.getHost(node))) {
+					commands.add(new RemoteVarCommand(hostsForVars.get(var), graph.getHost(node), node));
+				}
 				commands.add(new SignalCommand<T>(hostsForVars.get(var), var + node, Boolean.TRUE, fns.get(0), node));
 			}
 		}

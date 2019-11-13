@@ -33,6 +33,7 @@ public class CommandInterpreter {
 	private Map<String, UpdateProducer<?>> updateProducers = new HashMap<>();
 	private List<Var<?>> vars = new ArrayList<>();
 	private List<Signal<?>> finalNodes = new ArrayList<>();
+	private List<Signal<?>> signals = new ArrayList<>();
 
 	private List<String> varsToWaitFor;
 	private boolean running = false;
@@ -117,7 +118,8 @@ public class CommandInterpreter {
 			}
 			this.varUpdates.set(varUpdates);
 			HashMap<String, List<Update>> finalNodeUpdates = new HashMap<>();
-			for (Signal<?> s : finalNodes) {
+			for (Signal<?> s : signals) {
+
 				finalNodeUpdates.put(s.getObject(), s.getUpdateLog());
 			}
 			this.finalNodeUpdates.set(finalNodeUpdates);
@@ -173,6 +175,7 @@ public class CommandInterpreter {
 		Supplier<?> closure = () -> fnend.apply(args[nbArgs - 1]);
 		Signal<?> newSignal = new Signal<>(command.getName(), (Supplier<? extends Serializable>) closure, args);
 		this.addUpdateProducer(command.getName(), newSignal);
+		this.signals.add(newSignal);
 		if (command.isFinalNode()) {
 			this.finalNodes.add(newSignal);
 		}
