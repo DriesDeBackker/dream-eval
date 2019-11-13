@@ -13,7 +13,6 @@ import evalapp.commands.Command;
 import evalapp.commands.CommandsGenerator;
 import evalapp.commands.Experiment;
 import evalapp.commands.IterationSpecifics;
-import evalapp.commands.StartCommand;
 import evalapp.commands.VarCommand;
 import evalapp.graphgenerator.DependencyGraph;
 import evalapp.graphgenerator.GraphGenerator;
@@ -34,6 +33,7 @@ public abstract class ProgramDeployer extends Client {
 	protected List<Command> cmds;
 	protected Experiment exp;
 	protected DependencyGraph graph;
+	protected Var<Boolean> runVar;
 
 	public ProgramDeployer(String hostname, Experiment exp) {
 		super(hostname);
@@ -43,6 +43,7 @@ public abstract class ProgramDeployer extends Client {
 	@Override
 	protected void init() {
 		this.cmdsVar = new Var<Command>("commands", null);
+		this.runVar = new Var<Boolean>("running", Boolean.FALSE);
 		this.is = new IterationSpecifics(Config.update_interval_mean, Config.update_interval_sd);
 		// this.is = new IterationSpecifics(1000, 0);
 		this.gg = new GraphGenerator(Config.random_seed);
@@ -152,14 +153,7 @@ public abstract class ProgramDeployer extends Client {
 	}
 
 	private void startExperiment() {
-		for (int i = 1; i <= clients.length; i++) {
-			cmdsVar.set(new StartCommand("host" + i));
-			try {
-				Thread.sleep(250);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+		this.runVar.set(Boolean.TRUE);
 		try {
 			Thread.sleep(Config.experiment_length);
 		} catch (InterruptedException e) {

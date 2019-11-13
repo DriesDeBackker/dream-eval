@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -17,15 +16,10 @@ import dream.client.UpdateProducer;
 import dream.client.Var;
 import dream.common.Consts;
 import evalapp.commands.Command;
-import evalapp.commands.EndCommand;
-import evalapp.commands.Experiment;
-import evalapp.commands.IterationSpecifics;
 import evalapp.commands.RemoteVarCommand;
 import evalapp.commands.SignalCommand;
-import evalapp.commands.StartCommand;
 import evalapp.commands.VarCommand;
 import evalapp.master.Update;
-import evalapp.valgenerator.ValueGenerator;
 
 public class CommandInterpreter {
 	private String hostname;
@@ -36,10 +30,15 @@ public class CommandInterpreter {
 	private List<Signal<?>> signals = new ArrayList<>();
 
 	private List<String> varsToWaitFor;
-	private boolean running = false;
+
+	private List<Thread> varThreads = new ArrayList<>();
 
 	private Var<HashMap<String, List<Long>>> varUpdates;
 	private Var<HashMap<String, List<Update>>> finalNodeUpdates;
+
+	private boolean running = false;
+
+	private RemoteVar<Boolean> runvar;
 
 	public CommandInterpreter(String host) {
 		this.hostname = host;
@@ -57,11 +56,21 @@ public class CommandInterpreter {
 			return deployed;
 		}, cs);
 
+		RemoteVar<Boolean> runRemoteVar = new RemoteVar<Boolean>("master", "running");
+		this.runvar = runRemoteVar;
+		new Signal<Boolean>("Processrunning", () -> {
+			Boolean bool = runRemoteVar.get();
+			this.running = Boolean.valueOf(bool);
+			return bool;
+		}, runRemoteVar);
+
 		this.varUpdates = new Var<HashMap<String, List<Long>>>("varUpdates", null);
 		this.finalNodeUpdates = new Var<HashMap<String, List<Update>>>("finalNodeUpdates", null);
 		new Var<Boolean>("ready", Boolean.TRUE);
 
 		System.out.println("Client initialization finished.");
+
+		this.start();
 	}
 
 	private void waitForVars() {
@@ -84,13 +93,6 @@ public class CommandInterpreter {
 	private boolean process(Command command) {
 		if (command == null || !command.getTarget().equals(this.hostname)) {
 			return false;
-		}
-		if (command instanceof StartCommand) {
-			System.out.println("Experiment started.");
-			this.processStartCommand();
-		} else if (command instanceof EndCommand) {
-			System.out.println("Experiment finished.");
-			this.processEndCommand((EndCommand) command);
 		} else if (command instanceof VarCommand<?>) {
 			System.out.println("Deploying a new Var.");
 			this.processVarCommand((VarCommand<?>) command);
@@ -104,55 +106,57 @@ public class CommandInterpreter {
 		return true;
 	}
 
-	private void processStartCommand() {
-		this.running = true;
+	private void start() {
+		while (this.runvar.get() == null) {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		System.out.println("Experiment started");
+		while (this.runvar.get()) {
+			for (Var<?> v : this.vars) {
+				v.setUnsafe(100);
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+		System.out.println("Waarom the fuck passeren we niet hier?????");
+		stop();
 	}
 
-	private void processEndCommand(EndCommand command) {
-		this.running = false;
-		if (command.getExperiment() == Experiment.DELAY) {
-			System.out.println("Sending results...");
-			HashMap<String, List<Long>> varUpdates = new HashMap<String, List<Long>>();
-			for (Var<?> v : vars) {
-				varUpdates.put(v.getObject(), v.getUpdateLog());
-			}
-			this.varUpdates.set(varUpdates);
-			HashMap<String, List<Update>> finalNodeUpdates = new HashMap<>();
-			for (Signal<?> s : signals) {
-
-				finalNodeUpdates.put(s.getObject(), s.getUpdateLog());
-			}
-			this.finalNodeUpdates.set(finalNodeUpdates);
-			new Var<Boolean>("resultsSent", Boolean.TRUE);
+	@SuppressWarnings("deprecation")
+	private void stop() {
+		System.out.println("Experiment finished");
+		for (Thread t : this.varThreads) {
+			t.stop();
 		}
+		System.out.println("Sending results...");
+		HashMap<String, List<Long>> varUpdates = new HashMap<String, List<Long>>();
+		for (Var<?> v : vars) {
+			varUpdates.put(v.getObject(), v.getUpdateLog());
+		}
+		this.varUpdates.set(varUpdates);
+		HashMap<String, List<Update>> finalNodeUpdates = new HashMap<>();
+		for (Signal<?> s : signals) {
+
+			finalNodeUpdates.put(s.getObject(), s.getUpdateLog());
+		}
+		this.finalNodeUpdates.set(finalNodeUpdates);
+		new Var<Boolean>("resultsSent", Boolean.TRUE);
+
 	}
 
 	private void processVarCommand(VarCommand<?> command) {
 		Var<?> newVar = new Var<>(command.getName(), command.getInitialValue());
 		this.addUpdateProducer(command.getName(), newVar);
 		this.vars.add(newVar);
-
-		Thread t1 = new Thread(new Runnable() {
-			public void run() {
-				IterationSpecifics is = command.getIs();
-				long mean = is.getMean();
-				long sd = is.getSd();
-				ValueGenerator<?> g = command.getGenerator();
-				Random r = new Random();
-				while (true) {
-					if (running) {
-						newVar.setUnsafe(g.next());
-					}
-					double next = r.nextGaussian() * sd + mean;
-					try {
-						Thread.sleep((long) next);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		});
-		t1.start();
 	}
 
 	private void processRemoteVarCommand(RemoteVarCommand command) {
@@ -184,6 +188,7 @@ public class CommandInterpreter {
 	private void addInitialVarsToWaitFor() {
 		this.varsToWaitFor = new ArrayList<String>();
 		this.varsToWaitFor.add("commands@master");
+		this.varsToWaitFor.add("running@master");
 	}
 
 	private void addUpdateProducer(String name, UpdateProducer<?> rv) {

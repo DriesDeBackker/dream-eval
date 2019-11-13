@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 import dream.client.DreamClient;
 import dream.client.RemoteVar;
-import evalapp.commands.EndCommand;
 import evalapp.commands.Experiment;
 import evalapp.master.Update;
 
@@ -55,14 +54,7 @@ public class DelayExperiment extends ProgramDeployer {
 
 	@Override
 	protected void endExperiment() {
-		for (int i = 1; i <= clients.length; i++) {
-			cmdsVar.set(new EndCommand("host" + i, exp));
-			try {
-				Thread.sleep(250);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
+		this.runVar.set(Boolean.FALSE);
 		awaitResults();
 		gatherResults();
 		processResults();
