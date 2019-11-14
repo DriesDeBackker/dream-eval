@@ -55,6 +55,7 @@ public class DelayExperiment extends ProgramDeployer {
 	@Override
 	protected void endExperiment() {
 		this.runningVar.set(Boolean.FALSE);
+		this.emittingVar.set(Boolean.FALSE);
 		awaitResults();
 		gatherResults();
 		processResults();

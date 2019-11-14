@@ -23,10 +23,12 @@ import evalapp.valgenerator.RandomNormalInteger;
 import evalapp.valgenerator.ValueGenerator;
 
 public abstract class ProgramDeployer extends Client {
-	private static final String[] clients = { "host1", "host2", "host3", "host4", "host5" };
+	protected static final String[] clients = { "host1", "host2", "host3", "host4", "host5" };
 
 	protected Var<Command> cmdsVar;
 	protected Var<Boolean> runningVar;
+	protected Var<Boolean> emittingVar;
+	protected Var<Experiment> experimentVar;
 	protected GraphGenerator gg;
 	protected CommandsGenerator<Integer> cg;
 	protected IterationSpecifics is;
@@ -44,6 +46,8 @@ public abstract class ProgramDeployer extends Client {
 	protected void init() {
 		this.cmdsVar = new Var<Command>("commands", null);
 		this.runningVar = new Var<Boolean>("running", null);
+		this.emittingVar = new Var<Boolean>("emitting", null);
+		this.experimentVar = new Var<Experiment>("experiment", null);
 		this.is = new IterationSpecifics(Config.update_interval_mean, Config.update_interval_sd);
 		// this.is = new IterationSpecifics(1000, 0);
 		this.gg = new GraphGenerator(Config.random_seed);
@@ -54,7 +58,7 @@ public abstract class ProgramDeployer extends Client {
 		createProgram();
 		deployProgram(cmds);
 		prepareExperiment();
-		askPermissionToStart();
+		// askPermissionToStart();
 		startExperiment();
 		endExperiment();
 	}
@@ -128,6 +132,9 @@ public abstract class ProgramDeployer extends Client {
 	@SuppressWarnings("unchecked")
 	protected void deployProgram(List<Command> cmds) {
 		System.out.println("Deploying distributed reactive program");
+
+		this.experimentVar.set(this.exp);
+
 		for (Command cmd : cmds) {
 			if (cmd instanceof VarCommand) {
 				VarCommand<Integer> vcmd = (VarCommand<Integer>) cmd;
@@ -136,7 +143,7 @@ public abstract class ProgramDeployer extends Client {
 			}
 			cmdsVar.set(cmd);
 			try {
-				Thread.sleep(250);
+				Thread.sleep(200);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -154,6 +161,7 @@ public abstract class ProgramDeployer extends Client {
 
 	private void startExperiment() {
 		this.runningVar.set(Boolean.TRUE);
+		this.emittingVar.set(Boolean.TRUE);
 		try {
 			Thread.sleep(Config.experiment_length);
 		} catch (InterruptedException e) {
