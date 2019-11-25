@@ -161,6 +161,7 @@ public class DelayExperiment extends ProgramDeployer {
 				totalPropDelays.add(totalPropDelay);
 			}
 		}
+		totalPropDelays = totalPropDelays.stream().filter(d -> d < 2000).collect(Collectors.toList());
 		System.out.println(totalPropDelays.toString());
 		// Calculate the mean total propagation delay.
 		Long sum = Long.valueOf(0);

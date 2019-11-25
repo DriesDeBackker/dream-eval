@@ -53,7 +53,7 @@ public class RemoteVar<T extends Serializable> implements Subscriber, UpdateProd
 		this(Consts.hostName, object);
 	}
 
-	public final synchronized T get() {
+	public final /* synchronized */ T get() {
 		return val;
 	}
 
