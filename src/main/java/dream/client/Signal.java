@@ -62,7 +62,7 @@ public class Signal<T extends Serializable> implements TimeChangingValue<T>, Upd
 		clientEventForwarder.advertise(new Advertisement(Consts.hostName, object), subs, true);
 	}
 
-	private final synchronized void processNextUpdate() {
+	private final /* synchronized */ void processNextUpdate() {
 		if (pendingAcks == 0) {
 			// Notify that the previous update has finished
 			if (!waitingProducers.isEmpty()) {
@@ -145,7 +145,7 @@ public class Signal<T extends Serializable> implements TimeChangingValue<T>, Upd
 	}
 
 	@Override
-	public final synchronized T evaluate() {
+	public final /* synchronized */ T evaluate() {
 		return evaluation.get();
 	}
 
