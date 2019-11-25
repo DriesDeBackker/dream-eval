@@ -161,7 +161,7 @@ public class Signal<T extends Serializable> implements TimeChangingValue<T>, Upd
 	}
 
 	@Override
-	public final synchronized void updateFromProducer(EventPacket packet, UpdateProducer<?> producer) {
+	public final /* synchronized */ void updateFromProducer(EventPacket packet, UpdateProducer<?> producer) {
 		final EventProducerPair pair = new EventProducerPair(packet, producer);
 		eventQueue.add(pair);
 		logger.finest("Method update called for event " + pair + ". Added to the queue1.");
