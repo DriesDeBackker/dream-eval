@@ -81,7 +81,7 @@ public class GraphGenerator {
 				}
 				// Choose a host client respecting the average locality.
 				String hostClient;
-				boolean local = r.nextDouble() > Config.nodes_locality;
+				boolean local = r.nextDouble() < Config.nodes_locality;
 				Set<String> localClientsSet = new HashSet<String>();
 				deps.forEach(d -> localClientsSet.add(graph.getHost(d)));
 				List<String> localClientsList = new ArrayList<String>(localClientsSet);

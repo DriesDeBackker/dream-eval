@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Scanner;
 import java.util.function.Function;
 
 import dream.client.UpdateProducer;
@@ -152,16 +151,12 @@ public abstract class ProgramDeployer extends Client {
 
 	protected abstract void prepareExperiment();
 
-	private void askPermissionToStart() {
-		Scanner reader = new Scanner(System.in); // Reading from System.in
-		System.out.println("Input any number to start the experiment: ");
-		reader.nextInt();
-		reader.close();
-	}
-
 	private void startExperiment() {
 		this.runningVar.set(Boolean.TRUE);
 		this.emittingVar.set(Boolean.TRUE);
+
+		System.out.println("EXPERIMENT STARTED");
+
 		try {
 			Thread.sleep(Config.experiment_length);
 		} catch (InterruptedException e) {
