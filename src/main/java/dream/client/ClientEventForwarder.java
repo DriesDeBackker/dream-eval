@@ -195,10 +195,10 @@ class ClientEventForwarder implements PacketForwarder {
 
 	final synchronized void advertise(Advertisement adv, boolean isPublic) {
 		logger.fine("Sending advertisement " + adv);
+		dependencyGraph.processAdv(adv);
 		if (Consts.consistencyType == ConsistencyType.SINGLE_SOURCE_GLITCH_FREE || //
 				Consts.consistencyType == ConsistencyType.COMPLETE_GLITCH_FREE || //
 				Consts.consistencyType == ConsistencyType.ATOMIC) {
-			dependencyGraph.processAdv(adv);
 			updateDetectors();
 		}
 		connectionManager.sendAdvertisement(adv, isPublic);
@@ -206,10 +206,10 @@ class ClientEventForwarder implements PacketForwarder {
 
 	final synchronized void unadvertise(Advertisement adv, boolean isPublic) {
 		logger.fine("Sending unadvertisement " + adv);
+		dependencyGraph.processUnAdv(adv);
 		if (Consts.consistencyType == ConsistencyType.SINGLE_SOURCE_GLITCH_FREE || //
 				Consts.consistencyType == ConsistencyType.COMPLETE_GLITCH_FREE || //
 				Consts.consistencyType == ConsistencyType.ATOMIC) {
-			dependencyGraph.processUnAdv(adv);
 			updateDetectors();
 		}
 		connectionManager.sendUnadvertisement(adv, isPublic);
@@ -217,10 +217,10 @@ class ClientEventForwarder implements PacketForwarder {
 
 	final synchronized void advertise(Advertisement adv, Set<Subscription<?>> subs, boolean isPublic) {
 		logger.fine("Sending advertisement " + adv + " with subscriptions " + subs);
+		dependencyGraph.processAdv(adv, subs);
 		if (Consts.consistencyType == ConsistencyType.SINGLE_SOURCE_GLITCH_FREE || //
 				Consts.consistencyType == ConsistencyType.COMPLETE_GLITCH_FREE || //
 				Consts.consistencyType == ConsistencyType.ATOMIC) {
-			dependencyGraph.processAdv(adv, subs);
 			updateDetectors();
 		}
 		connectionManager.sendAdvertisement(adv, subs, isPublic);
@@ -228,10 +228,10 @@ class ClientEventForwarder implements PacketForwarder {
 
 	final synchronized void unadvertise(Advertisement adv, Set<Subscription<?>> subs, boolean isPublic) {
 		logger.fine("Sending unadvertisement " + adv + " with subscriptions " + subs);
+		dependencyGraph.processUnAdv(adv, subs);
 		if (Consts.consistencyType == ConsistencyType.SINGLE_SOURCE_GLITCH_FREE || //
 				Consts.consistencyType == ConsistencyType.COMPLETE_GLITCH_FREE || //
 				Consts.consistencyType == ConsistencyType.ATOMIC) {
-			dependencyGraph.processUnAdv(adv, subs);
 			updateDetectors();
 		}
 		connectionManager.sendUnadvertisement(adv, isPublic);
@@ -272,26 +272,26 @@ class ClientEventForwarder implements PacketForwarder {
 	}
 
 	private final void processAdvertisementFromServer(AdvertisementPacket advPkt) {
+		final Set<Subscription<?>> subs = advPkt.getSubscriptions();
+		switch (advPkt.getAdvType()) {
+		case ADV:
+			if (subs.isEmpty()) {
+				dependencyGraph.processAdv(advPkt.getAdvertisement());
+			} else {
+				dependencyGraph.processAdv(advPkt.getAdvertisement(), subs);
+			}
+			break;
+		case UNADV:
+			if (subs.isEmpty()) {
+				dependencyGraph.processUnAdv(advPkt.getAdvertisement());
+			} else {
+				dependencyGraph.processUnAdv(advPkt.getAdvertisement(), subs);
+			}
+			break;
+		}
 		if (Consts.consistencyType == ConsistencyType.SINGLE_SOURCE_GLITCH_FREE || //
 				Consts.consistencyType == ConsistencyType.COMPLETE_GLITCH_FREE || //
 				Consts.consistencyType == ConsistencyType.ATOMIC) {
-			final Set<Subscription<?>> subs = advPkt.getSubscriptions();
-			switch (advPkt.getAdvType()) {
-			case ADV:
-				if (subs.isEmpty()) {
-					dependencyGraph.processAdv(advPkt.getAdvertisement());
-				} else {
-					dependencyGraph.processAdv(advPkt.getAdvertisement(), subs);
-				}
-				break;
-			case UNADV:
-				if (subs.isEmpty()) {
-					dependencyGraph.processUnAdv(advPkt.getAdvertisement());
-				} else {
-					dependencyGraph.processUnAdv(advPkt.getAdvertisement(), subs);
-				}
-				break;
-			}
 			updateDetectors();
 		}
 	}
