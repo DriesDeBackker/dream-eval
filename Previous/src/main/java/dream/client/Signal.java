@@ -62,7 +62,7 @@ public class Signal<T extends Serializable> implements TimeChangingValue<T>, Upd
 		clientEventForwarder.advertise(new Advertisement(Consts.hostName, object), subs, true);
 	}
 
-	private final /* synchronized */ void processNextUpdate() {
+	private final void processNextUpdate() {
 		if (pendingAcks == 0) {
 			// Notify that the previous update has finished
 			if (!waitingProducers.isEmpty()) {
@@ -145,7 +145,7 @@ public class Signal<T extends Serializable> implements TimeChangingValue<T>, Upd
 	}
 
 	@Override
-	public final /* synchronized */ T evaluate() {
+	public final T evaluate() {
 		return evaluation.get();
 	}
 
@@ -161,7 +161,7 @@ public class Signal<T extends Serializable> implements TimeChangingValue<T>, Upd
 	}
 
 	@Override
-	public final /* synchronized */ void updateFromProducer(EventPacket packet, UpdateProducer<?> producer) {
+	public final void updateFromProducer(EventPacket packet, UpdateProducer<?> producer) {
 		final EventProducerPair pair = new EventProducerPair(packet, producer);
 		eventQueue.add(pair);
 		logger.finest("Method update called for event " + pair + ". Added to the queue1.");

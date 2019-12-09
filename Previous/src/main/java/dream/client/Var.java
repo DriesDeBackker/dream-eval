@@ -65,7 +65,7 @@ public class Var<T extends Serializable> implements UpdateProducer<T>, LockAppli
 		}
 	}
 
-	public final /* synchronized */ T get() {
+	public final T get() {
 		assert val != null;
 		return val;
 	}

@@ -121,8 +121,9 @@ public class DelayExperiment extends ProgramDeployer {
 
 		System.out.println("finalNodesOfVars" + finalNodesOfVars.toString());
 
-		List<Long> totalPropDelays = new ArrayList<>();
+		List<Double> totalPropDelays = new ArrayList<>();
 		for (String var : this.varUpdates.keySet()) {
+			List<Long> varPropDelays = new ArrayList<>();
 			System.out.println("* Considering var: " + var);
 			System.out.println("  update time list: " + this.varUpdates.get(var).toString());
 			// Associate with each var the corresponding update streams of its
@@ -158,14 +159,21 @@ public class DelayExperiment extends ProgramDeployer {
 					}
 				}
 				Long totalPropDelay = longest - varUpdatesForVar.get(i);
-				totalPropDelays.add(totalPropDelay);
+				varPropDelays.add(totalPropDelay);
 			}
+			varPropDelays = varPropDelays.stream().filter(d -> d < 1500).collect(Collectors.toList());
+			System.out.println(varPropDelays.toString());
+			Long sum = Long.valueOf(0);
+			for (Long delay : varPropDelays) {
+				sum += delay;
+			}
+			double mean = sum / varPropDelays.size();
+			totalPropDelays.add(mean);
 		}
-		totalPropDelays = totalPropDelays.stream().filter(d -> d < 2000).collect(Collectors.toList());
 		System.out.println(totalPropDelays.toString());
 		// Calculate the mean total propagation delay.
-		Long sum = Long.valueOf(0);
-		for (Long delay : totalPropDelays) {
+		double sum = Double.valueOf(0);
+		for (Double delay : totalPropDelays) {
 			sum += delay;
 		}
 		double mean = sum / totalPropDelays.size();
