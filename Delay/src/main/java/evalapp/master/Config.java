@@ -46,7 +46,6 @@ public class Config {
 		final String valuesMeanProperty = properties.getProperty("valuesMean", "100");
 		final String valuesSDProperty = properties.getProperty("valuesSD", "20");
 		final String randomSeedProperty = properties.getProperty("randomSeed", "1815");
-		final String experiment_type = properties.getProperty("experiment", "traffic");
 		final String experimentLengthProperty = properties.getProperty("experimentLength", "600000");
 
 		number_of_vars = Integer.parseInt(numberOfVarsProperty);

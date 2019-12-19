@@ -39,7 +39,7 @@ public class HopExperiment extends Client {
 			return Boolean.TRUE;
 		}, rv);
 
-		for (int i = 1; i < 60; i++) {
+		for (int i = 1; i < 200; i++) {
 			sourceVar.set(System.currentTimeMillis());
 			try {
 				Thread.sleep(1000);
